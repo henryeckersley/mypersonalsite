@@ -1,8 +1,8 @@
-name: Render premium Kokoro Heart neural narration
+name: Render The Longest Minute neural audiobook
 on:
   push:
     branches:
-      - audiobook-heart-20261122
+      - audiobook-longest-minute-20261122
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,7 +32,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: The-Last-Edition-Heart-Master
+          name: The-Longest-Minute-Neural-Master
           path: |
             audiobook-production/rendered-kokoro/*.mp3
             audiobook-production/rendered-kokoro/chapters.json
