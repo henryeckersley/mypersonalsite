@@ -1,0 +1,42 @@
+name: Render The Note Below voice stems
+on:
+  push:
+    branches:
+      - the-note-below-20261122
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audiobook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Checkout novel studio branch
+        uses: actions/checkout@v4
+      - name: Set up narrator environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install audio and neural speech tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg >/dev/null
+          python -m pip install -U pip
+          python -m pip install "edge-tts==7.3.1" "pydub==0.25.1"
+          ffprobe -version | head -1
+      - name: Synthesize and verify every narration passage
+        working-directory: audiobook-production
+        env:
+          VOICE: en-US-BrianMultilingualNeural
+          RATE: "-4%"
+        run: python -u synthesize_note_below.py
+      - name: Save every source clip and exact assembly manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: The-Note-Below-Voice-Stems
+          path: |
+            audiobook-production/speech/*.mp3
+            audiobook-production/speech/manifest.json
+          retention-days: 7
+          if-no-files-found: warn
