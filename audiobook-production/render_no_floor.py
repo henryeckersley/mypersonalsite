@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NO FLOOR - full audiobook narration. Each chapter is checked for text loss, failures, decoding and duration."""
+"""THE HISTORY OF NOTHING - full audiobook narration. Each chapter is checked for text loss, failures, decoding and duration."""
 import asyncio
 import json
 import os
@@ -13,21 +13,21 @@ SRC=HERE/'story.txt'
 OUT=HERE/'out'
 PARTS=OUT/'parts'
 PARTS.mkdir(parents=True,exist_ok=True)
-VOICE=os.getenv('VOICE','en-US-ChristopherNeural')
-RATE=os.getenv('RATE','-6%')
+VOICE=os.getenv('VOICE','en-US-AndrewMultilingualNeural')
+RATE=os.getenv('RATE','-7%')
 STORY=SRC.read_text(encoding='utf-8').replace('\r\n','\n')
-HEADERS=re.findall(r'(?m)^CHAPTER [A-Z]+\. [^\n]+',STORY)
-assert len(HEADERS)==8, f'Expected 8 chapters, found {len(HEADERS)}'
-SECTIONS=re.split(r'(?m)(?=^CHAPTER [A-Z]+\. )',STORY)
-SECTIONS=[x.strip().removesuffix('THE END.').strip() for x in SECTIONS if x.strip().startswith('CHAPTER ')]
-assert len(SECTIONS)==8,len(SECTIONS)
+HEADERS=re.findall(r'(?m)^MOVEMENT [A-Z]+\. [^\n]+',STORY)
+assert len(HEADERS)==6, f'Expected 8 chapters, found {len(HEADERS)}'
+SECTIONS=re.split(r'(?m)(?=^MOVEMENT [A-Z]+\. )',STORY)
+SECTIONS=[x.strip().removesuffix('THE END.').strip() for x in SECTIONS if x.strip().startswith('MOVEMENT ')]
+assert len(SECTIONS)==6,len(SECTIONS)
 
 def clean(s):
     s=s.replace('—',', ').replace('–',' to ').replace('…','...')
     s=s.replace('“','"').replace('”','"').replace('’',"'")
     return s
 
-MAX_CHARS=925
+MAX_CHARS=840
 
 def passages(text):
     paras=[x.strip() for x in re.split(r'\n\s*\n',text) if x.strip()]
@@ -46,7 +46,7 @@ def passages(text):
 
 jobs=[];chapter_files={}
 for ch,raw in enumerate(SECTIONS,1):
-    raw = ('NO FLOOR. A TRUE STORY.\n\n'+raw) if ch==1 else raw
+    raw = ('THE HISTORY OF NOTHING.\n\n'+raw) if ch==1 else raw
     items=passages(raw)
     chapter_files[ch]=[]
     for seq,part in enumerate(items,1):
@@ -54,7 +54,7 @@ for ch,raw in enumerate(SECTIONS,1):
         jobs.append((ch,seq,part,dest))
         chapter_files[ch].append(dest)
 
-print('CHAPTERS',len(SECTIONS),'CHUNKS',len(jobs),'WORDS',len(STORY.split()), 'VOICE',VOICE,flush=True)
+print('MOVEMENTS',len(SECTIONS),'CHUNKS',len(jobs),'WORDS',len(STORY.split()), 'VOICE',VOICE,flush=True)
 
 async def one_text(text,path):
     import edge_tts
@@ -114,7 +114,7 @@ SR=44100
 book=AudioSegment.silent(duration=300,frame_rate=SR).set_channels(1)
 meta=[]
 chapter_outputs=[]
-for chapter in range(1,9):
+for chapter in range(1,7):
     start=len(book)
     chapter_a=AudioSegment.silent(duration=130,frame_rate=SR).set_channels(1)
     for seq,path in enumerate(chapter_files[chapter]):
@@ -123,28 +123,28 @@ for chapter in range(1,9):
         chapter_a+=wav
         if seq!=len(chapter_files[chapter])-1:
             chapter_a+=AudioSegment.silent(duration=320,frame_rate=SR)
-    title=HEADERS[chapter-1].replace('CHAPTER ','CHAPTER ',1)
+    title=HEADERS[chapter-1].replace('MOVEMENT ','MOVEMENT ',1)
     chapter_outputs.append((chapter,title,len(chapter_a)))
     # Preserve narration dynamics; correct only dangerously loud chapters.
     if chapter_a.max_dBFS> -2.2:
         chapter_a=chapter_a.apply_gain(-2.2-chapter_a.max_dBFS)
     book+=chapter_a
-    if chapter<8:
+    if chapter<6:
         book+=AudioSegment.silent(duration=1050,frame_rate=SR)
     else:
         book+=AudioSegment.silent(duration=1800,frame_rate=SR)
     meta.append({'chapter':chapter,'title':title,'start_ms':start,'length_ms':len(chapter_a)})
     print('ASSEMBLED',chapter,round(len(chapter_a)/1000,1),'secs',flush=True)
-assert 20*60000 < len(book) < 60*60000, f'Bad duration {len(book)/1000}s'
-master=OUT/'No_Floor_Clean_Narration.mp3'
+assert 20*60000 < len(book) < 50*60000, f'Bad duration {len(book)/1000}s'
+master=OUT/'The_History_of_Nothing_Clean_Narration.mp3'
 book.export(master,format='mp3',bitrate='160k',tags={
- 'title':'NO FLOOR: The Walk That Stopped New York',
+ 'title':'The History of Nothing: Four Close Calls',
  'artist':'Original narrative nonfiction',
- 'album':'NO FLOOR - Complete Audiobook',
+ 'album':'The History of Nothing — Complete Audiobook',
  'genre':'Audiobook',
- 'comment':'An original narrative account of the August 7, 1974 World Trade Center high-wire walk.'
+ 'comment':'An original, source-researched documentary essay about nuclear close calls in 1962, 1983 and 1995.'
 },parameters=['-ar','44100','-ac','1'])
 subprocess.run(['ffmpeg','-v','error','-xerror','-i',str(master),'-f','null','-'],check=True,timeout=200)
-info={'title':'NO FLOOR','voice':VOICE,'rate':RATE,'total_ms':len(book),'chapters':meta,'chunks':manifest,'words':len(STORY.split()),'audio_bytes':master.stat().st_size}
+info={'title':'THE HISTORY OF NOTHING','voice':VOICE,'rate':RATE,'total_ms':len(book),'chapters':meta,'chunks':manifest,'words':len(STORY.split()),'audio_bytes':master.stat().st_size}
 (OUT/'manifest.json').write_text(json.dumps(info,indent=2),encoding='utf-8')
 print('FULLY VERIFIED',round(len(book)/60000,2),'MINUTES',master.stat().st_size,'BYTES',flush=True)
