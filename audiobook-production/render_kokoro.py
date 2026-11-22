@@ -12,7 +12,8 @@ OUT.mkdir(parents=True,exist_ok=True)
 story=(BASE/"story.txt").read_text(encoding="utf-8")
 story=story[story.index("CHAPTER ONE. "):].split("\nTHE END.")[0].strip()
 chapters=[s.strip() for s in re.split(r"(?m)(?=^CHAPTER [A-Z]+\. )",story) if s.strip()]
-assert len(chapters)==9, len(chapters)
+assert len(chapters)==8, len(chapters)
+chapters[0] = "THE LONGEST MINUTE.\n\n" + chapters[0]
 voice=os.getenv("VOICE","am_michael")
 print("KOKORO",voice,len(story),"chars",flush=True)
 pipeline=KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
@@ -49,8 +50,8 @@ master=np.concatenate(all_wav)
 assert len(master)/sr>18*60,f"Unexpectedly short audio {len(master)/sr}"
 wav=OUT/"book_master.wav"
 sf.write(wav,master,sr,subtype="PCM_16")
-mp3=OUT/"The_Last_Edition_Kokoro_Neural_Audiobook.mp3"
+mp3=OUT/"The_Longest_Minute_Complete_Neural_Audiobook.mp3"
 subprocess.run(["ffmpeg","-y","-hide_banner","-loglevel","error","-i",str(wav),"-af","loudnorm=I=-18:TP=-1.5:LRA=11","-ac","1","-ar","44100","-codec:a","libmp3lame","-b:a","160k",str(mp3)],check=True)
-meta={"voice":voice,"chapter_starts":chapter_meta,"duration_ms":int(len(master)/sr*1000),"script_characters":len(story),"file_bytes":mp3.stat().st_size}
+meta={"voice":voice,"chapter_starts":chapter_meta,"duration_ms":int(len(master)/sr*1000),"script_characters":len(story),"book_title":"The Longest Minute","file_bytes":mp3.stat().st_size}
 (OUT/"chapters.json").write_text(json.dumps(meta,indent=2))
 print("COMPLETE",json.dumps(meta),flush=True)
