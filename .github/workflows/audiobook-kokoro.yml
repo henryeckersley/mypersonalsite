@@ -1,8 +1,8 @@
-name: Render Kokoro neural narration
+name: Render premium Kokoro Heart neural narration
 on:
   push:
     branches:
-      - audiobook-kokoro-20261122
+      - audiobook-heart-20261122
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,13 +26,13 @@ jobs:
         working-directory: audiobook-production
         env:
           HF_HUB_DISABLE_XET: '1'
-          VOICE: am_michael
+          VOICE: af_heart
         run: python -u render_kokoro.py
       - name: Deliver master audiobook
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: The-Last-Edition-Kokoro-Master
+          name: The-Last-Edition-Heart-Master
           path: |
             audiobook-production/rendered-kokoro/*.mp3
             audiobook-production/rendered-kokoro/chapters.json
