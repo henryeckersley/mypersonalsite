@@ -19,7 +19,7 @@ STORY=SRC.read_text(encoding='utf-8').replace('\r\n','\n')
 HEADERS=re.findall(r'(?m)^MOVEMENT [A-Z]+\. [^\n]+',STORY)
 assert len(HEADERS)==6, f'Expected 8 chapters, found {len(HEADERS)}'
 SECTIONS=re.split(r'(?m)(?=^MOVEMENT [A-Z]+\. )',STORY)
-SECTIONS=[x.strip().removesuffix('THE END.').strip() for x in SECTIONS if x.strip().startswith('MOVEMENT ')]
+SECTIONS=[x.strip().removesuffix('END OF STORY.').strip() for x in SECTIONS if x.strip().startswith('MOVEMENT ')]
 assert len(SECTIONS)==6,len(SECTIONS)
 
 def clean(s):
