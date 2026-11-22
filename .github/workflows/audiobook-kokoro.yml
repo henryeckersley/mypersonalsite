@@ -1,0 +1,40 @@
+name: Render Kokoro neural narration
+on:
+  push:
+    branches:
+      - audiobook-kokoro-20261122
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install local speech model dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y espeak-ng ffmpeg >/dev/null
+          python -m pip install -U pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install kokoro numpy soundfile
+      - name: Render all nine chapters with an actual neural voice model
+        working-directory: audiobook-production
+        env:
+          HF_HUB_DISABLE_XET: '1'
+          VOICE: am_michael
+        run: python -u render_kokoro.py
+      - name: Deliver master audiobook
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: The-Last-Edition-Kokoro-Master
+          path: |
+            audiobook-production/rendered-kokoro/*.mp3
+            audiobook-production/rendered-kokoro/chapters.json
+          retention-days: 7
+          if-no-files-found: warn
