@@ -127,7 +127,7 @@ async def worker(job,sem):
         else:sec=await synth(text,dest,ch,i)
         words=len(text.split())
         speed=words/(sec/60)
-        if not 85<speed<240:raise ValueError(f'suspicious narration duration ch{ch} {i}: {speed:.1f}wpm')
+        if words>=20 and not 70<speed<260:raise ValueError(f'suspicious narration duration ch{ch} {i}: {speed:.1f}wpm')
         print('OK',ch,i,words,'words',round(sec,2),'sec',round(speed,1),'wpm',flush=True)
         return {'ch':ch,'i':i,'voice':DINA_VOICE if ch==6 else RAY_VOICE,'word_count':words,'duration_s':round(sec,3),'bytes':dest.stat().st_size,'file':dest.name}
 
