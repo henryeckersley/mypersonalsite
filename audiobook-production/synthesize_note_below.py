@@ -10,7 +10,7 @@ OUT=BASE/'speech'
 OUT.mkdir(exist_ok=True,parents=True)
 VOICE=os.environ.get('VOICE','en-US-BrianMultilingualNeural')
 RATE=os.environ.get('RATE','-4%')
-source=(BASE/'manuscript.txt').read_text(encoding='utf-8').replace('\r\n','\n')
+source=(BASE/'story.txt').read_text(encoding='utf-8').replace('\r\n','\n')
 headings=list(re.finditer(r'(?m)^CHAPTER ([A-Z]+)\. (.+)$',source))
 assert len(headings)==6,(len(headings),[m.group() for m in headings])
 
