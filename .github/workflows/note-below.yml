@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 jobs:
   audiobook:
     runs-on: ubuntu-latest
@@ -24,6 +25,13 @@ jobs:
           python -m pip install -U pip
           python -m pip install "edge-tts==7.3.1" "pydub==0.25.1"
           ffprobe -version | head -1
+      - name: Restore voice clips from the exact final manuscript build
+        uses: actions/download-artifact@v4
+        with:
+          name: The-Part-I-Sold-Voice-Stems
+          run-id: 45084909532
+          github-token: ${{ github.token }}
+          path: audiobook-production/speech
       - name: Synthesize and verify every narration passage
         working-directory: audiobook-production
         env:
