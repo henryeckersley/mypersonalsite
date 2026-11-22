@@ -25,10 +25,11 @@ RAW = RAW[RAW.index("CHAPTER ONE. "):].split("\nTHE END.")[0].strip()
 SECTIONS = re.split(r"(?m)(?=^CHAPTER [A-Z]+\. )", RAW)
 SECTIONS = [s.strip() for s in SECTIONS if s.strip()]
 assert len(SECTIONS) == 9, [x[:50] for x in SECTIONS]
+SECTIONS[0] = "THE LAST EDITION.\n\n" + SECTIONS[0]
 
 VOICE_LIST = ["en-US-AndrewMultilingualNeural", "en-US-BrianMultilingualNeural", "en-US-ChristopherNeural", "en-US-GuyNeural"]
 VOICE = os.environ.get("VOICE", VOICE_LIST[0])
-CHUNK_LIMIT = 1750
+CHUNK_LIMIT = 1150
 
 def chunk_text(text, limit=CHUNK_LIMIT):
     paras = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
@@ -71,7 +72,7 @@ async def render_one(ch, idx, passage, dest):
         return
     err = None
     for voice in [VOICE] + [v for v in VOICE_LIST if v != VOICE]:
-        for attempt in range(3):
+        for attempt in range(6):
             try:
                 temp_dest = dest.with_suffix(".tmp")
                 comm = edge_tts.Communicate(
@@ -95,7 +96,7 @@ async def render_one(ch, idx, passage, dest):
     raise RuntimeError(f"All Edge speech attempts failed for chapter {ch}, seg {idx}: {err}")
 
 async def synth():
-    sem = asyncio.Semaphore(2)
+    sem = asyncio.Semaphore(4)
     async def single(item):
         async with sem:
             await render_one(*item)
