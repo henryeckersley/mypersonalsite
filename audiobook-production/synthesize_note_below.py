@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""Produce speech stems for The Note Below with one consistent neural voice.
-The score and foley are inserted later in an audio master, not spoken by the voice.
-"""
+"""Produce all speech for The Part I Sold, six chapters, consistent voices by POV. All segments are verified."""
 import asyncio, hashlib, json, os, re, subprocess, sys
 from pathlib import Path
 
 BASE=Path(__file__).resolve().parent
 OUT=BASE/'speech'
 OUT.mkdir(exist_ok=True,parents=True)
-VOICE=os.environ.get('VOICE','en-US-BrianMultilingualNeural')
+RAY_VOICE=os.environ.get('RAY_VOICE','en-US-AndrewMultilingualNeural')
+DINA_VOICE=os.environ.get('DINA_VOICE','en-US-AvaMultilingualNeural')
 RATE=os.environ.get('RATE','-4%')
 source=(BASE/'story.txt').read_text(encoding='utf-8').replace('\r\n','\n')
 headings=list(re.finditer(r'(?m)^CHAPTER ([A-Z]+)\. (.+)$',source))
@@ -83,18 +82,19 @@ transcript=' '.join(e['text'] for ch in entries for e in ch['events'] if e['kind
 input_transcript=re.sub(r'\s+',' ',re.sub(r'\[AUDIO:[A-Z_]+\]','',source[headings[0].start():])).strip()
 # token-by-token fidelity check, punctuation included in speech source
 assert re.sub(r'\s+',' ',transcript)==input_transcript,('Transcript differs from original',len(transcript),len(input_transcript))
-print('BEGIN',len(entries),'chapters',len(jobs),'speech parts',len(transcript.split()),'words','voice',VOICE,flush=True)
+print('BEGIN',len(entries),'chapters',len(jobs),'speech parts',len(transcript.split()),'words','narrators',RAY_VOICE,DINA_VOICE,flush=True)
 
 def duration(path):
     return float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(path)],text=True,timeout=25).strip())
 
 async def synth(text,dest,ch,i):
     import edge_tts
+    voice = DINA_VOICE if ch==6 else RAY_VOICE
     tmp=dest.with_suffix('.pending.mp3')
     for attempt in range(9):
         try:
             if tmp.exists():tmp.unlink()
-            tts=edge_tts.Communicate(text=text,voice=VOICE,rate=RATE,volume='+0%',pitch='-2Hz')
+            tts=edge_tts.Communicate(text=text,voice=voice,rate=RATE,volume='+0%',pitch='-1Hz')
             await asyncio.wait_for(tts.save(str(tmp)), timeout=110)
             if tmp.stat().st_size<1800: raise IOError('unreasonably small audio')
             seconds=await asyncio.to_thread(duration,tmp)
@@ -129,12 +129,12 @@ async def worker(job,sem):
         speed=words/(sec/60)
         if not 85<speed<240:raise ValueError(f'suspicious narration duration ch{ch} {i}: {speed:.1f}wpm')
         print('OK',ch,i,words,'words',round(sec,2),'sec',round(speed,1),'wpm',flush=True)
-        return {'ch':ch,'i':i,'word_count':words,'duration_s':round(sec,3),'bytes':dest.stat().st_size,'file':dest.name}
+        return {'ch':ch,'i':i,'voice':DINA_VOICE if ch==6 else RAY_VOICE,'word_count':words,'duration_s':round(sec,3),'bytes':dest.stat().st_size,'file':dest.name}
 
 async def main():
     sem=asyncio.Semaphore(3)
     result=await asyncio.gather(*(worker(job,sem) for job in jobs))
-    manifest={'title':'THE NOTE BELOW','source_sha256':hashlib.sha256(source.encode()).hexdigest(),'voice':VOICE,'rate':RATE,'chapters':entries,'parts':result,'words':len(transcript.split())}
+    manifest={'title':'THE PART I SOLD','source_sha256':hashlib.sha256(source.encode()).hexdigest(),'narrators':{'Ray':RAY_VOICE,'Dina':DINA_VOICE},'rate':RATE,'chapters':entries,'parts':result,'words':len(transcript.split())}
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print('COMPLETE',len(result),'segments',sum(x['duration_s'] for x in result),'speech seconds',flush=True)
 
