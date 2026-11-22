@@ -1,8 +1,8 @@
-name: Render No Floor Audiobook Master
+name: Render The History of Nothing Audiobook Master
 on:
   push:
     branches:
-      - no-floor-master-20261122
+      - the-history-of-nothing-master-20261122
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,19 +24,19 @@ jobs:
           python -m pip install -U pip
           python -m pip install edge-tts==7.3.1 pydub==0.25.1
           ffprobe -version | head -1
-      - name: Render complete eight-chapter professional-master-ready audiobook
+      - name: Render complete six-movement documentary audiobook
         working-directory: audiobook-production
         env:
-          VOICE: en-US-ChristopherNeural
-          RATE: "-6%"
+          VOICE: en-US-AndrewMultilingualNeural
+          RATE: "-7%"
         run: python -u render_no_floor.py
       - name: Preserve all output and error diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: No-Floor-Complete-Neural-Master
+          name: The-History-of-Nothing-Complete-Neural-Master
           path: |
-            audiobook-production/out/No_Floor_Clean_Narration.mp3
+            audiobook-production/out/The_History_of_Nothing_Clean_Narration.mp3
             audiobook-production/out/manifest.json
             audiobook-production/out/parts/*.mp3
           if-no-files-found: warn
