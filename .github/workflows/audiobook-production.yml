@@ -1,8 +1,8 @@
-name: Render complete flight audiobook (isolated)
+name: Render The Longest Minute alternate neural voice
 on:
   push:
     branches:
-      - audiobook-the-last-edition-20261122
+      - audiobook-longest-minute-andrew-20261122
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +17,8 @@ jobs:
           python-version: '3.11'
       - name: Setup narration tools
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg >/dev/null
           python -m pip install -U pip
           python -m pip install "edge-tts>=7.0" "pydub>=0.25"
           ffmpeg -version | head -1
@@ -29,7 +31,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: The-Last-Edition-Neural-Audiobook
+          name: The-Longest-Minute-Andrew-Neural
           path: |
             audiobook-production/rendered/The_Last_Edition_Neural_Narration.mp3
             audiobook-production/rendered/chapters.json
